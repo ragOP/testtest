@@ -24,6 +24,11 @@
         "source": "/sfmedi-unlock",
         "destination": "/third.html"
        
+      },
+      {
+        "source": "/engmed-tsh",
+        "destination": "/tsh.html"
+       
       }
     ]
   }
