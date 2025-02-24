@@ -5,6 +5,11 @@
         "destination": "/first.html"
     
       },
+
+        {
+ "source": "/engmed-ths-1",
+        "destination": "/midnight.html"
+        },
            {
         "source": "/sfmedi",
         "destination": "/sfmedi.html"
