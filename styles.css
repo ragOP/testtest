@@ -124,6 +124,7 @@ a{
     .top-sticky-blue-test2 {
         height: 66px; /* Adjusted height for smaller screens */
         width: 100%; /* Ensure it stays 100% width */
+      font-size:18px;
     }
   }
   
