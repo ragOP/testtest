@@ -14,6 +14,10 @@
         "source": "/sfmedi",
         "destination": "/sfmedi.html"
     
+      },{
+        "source": "/checknow",
+        "destination": "/checknow.html"
+       
       },
            {
         "source": "/sfmedi-bg",
