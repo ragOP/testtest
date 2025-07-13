@@ -34,6 +34,12 @@
         "destination": "/third.html"
        
       },
+        {
+        "source": "/sfmedi-168",
+        "destination": "/prio.html"
+       
+      },
+    
       {
         "source": "/engmed-tsh",
         "destination": "/tsh.html"
