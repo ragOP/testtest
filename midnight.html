@@ -11,9 +11,7 @@
   <!-- Ringba -->
   <script src=//b-js.ringba.com/CA1a16b597ee204279b113debdbea8413c async></script>
 
-  <style>
-    .hidden { display: none; }
-  </style>
+  <style>.hidden{display:none;}</style>
 
   <!-- Start NB Pixel Snippet -->
   <script>
@@ -59,11 +57,10 @@
 
       <div class="survey">
         <div class="quiz-5" id="btn">
-          <span id="quizQuestion">Are you over the age of 64?</span>
+          <span id="quizQuestion">1. What's Your Age Range?</span>
         </div>
         <div class="answer" id="answerOptions">
-          <div class="answer-btn-5" onclick="handleQuizP()">YES, I'M 65 OR OLDER</div>
-          <div class="answer-btn-5" onclick="handleQuizN()">NO, I'M 64 OR YOUNGER</div>
+          <!-- Buttons will be injected by JS (functionality only) -->
         </div>
       </div>
     </div>
@@ -78,7 +75,6 @@
       <div class="tap-direction">👇 TAP BELOW TO CALL 👇</div>
 
       <div class="call-btn">
-        <!-- IMPORTANT: add id so we can attach a reliable click handler -->
         <a id="callLink" href="tel:+13236897861" style="text-decoration:none; color:inherit;">
           CALL (323) 689-7861
         </a>
@@ -101,54 +97,126 @@
         <a href="/privacy.html">Privacy Policy</a>
       </div>
       <div class="copyright">
-  <img src="./dis-desktop.png" class="logo-desktop" alt="Desktop Logo" />
-      <img src="./dis-mobile.png" class="logo-mobile" alt="Mobile Logo" />
-      This website is operated by a marketing and lead generation company. We are not a government agency, insurance provider, or financial institution. Our role is to connect consumers with licensed professionals, carriers, or service providers who can discuss available options. We do not make eligibility determinations or provide coverage, financing, or government benefits directly.
-      <br />
-
+        <img src="./dis-desktop.png" class="logo-desktop" alt="Desktop Logo" />
+        <img src="./dis-mobile.png" class="logo-mobile" alt="Mobile Logo" />
+        This website is operated by a marketing and lead generation company. We are not a government agency, insurance provider, or financial institution. Our role is to connect consumers with licensed professionals, carriers, or service providers who can discuss available options. We do not make eligibility determinations or provide coverage, financing, or government benefits directly.
+        <br />
         Copyright © 2025 - All rights reserved Daily America Savings.
       </div>
     </div>
   </div>
 
   <script>
-    let step = "process";
-    let quizQuestion = "Are you over the age of 64?";
+    /* ========= RINGBA / NB HELPERS (functionality only) ========= */
+    window._rgba_tags = window._rgba_tags || [];
+    const RINGBA_AGE_KEY = 'age'; // change if your Tag Pipe uses a different key (e.g. 'Age')
+
+    /**
+     * Push a tag to Ringba and also mirror the same value to NewsBreak via `newsbreak_cid`.
+     * Example pushed object: { age: '64-69', newsbreak_cid: '64-69' }
+     */
+    function rbTag(key, value) {
+      try {
+        // set NB cid mirror
+        window.newsbreak_cid = value || '';
+
+        const tag = {};
+        tag[key === 'age' ? RINGBA_AGE_KEY : key] = value;
+        tag['newsbreak_cid'] = window.newsbreak_cid || '';
+        window._rgba_tags.push(tag);
+
+        // debug
+        console.log('[Ringba] push:', tag, '→ _rgba_tags:', window._rgba_tags);
+      } catch (e) {
+        console.warn('[Ringba] push failed', e);
+      }
+    }
+
+    // Backwards-compatible function using your snippet name for AGE specifically
+    function rbAge(value){
+      rbTag('age', value);
+    }
+
+    /* ========= QUIZ FLOW (functionality only) ========= */
     const statusDiv = document.getElementById("status");
     const statusMessage = document.getElementById("statusMessage");
     const congratulationsDiv = document.getElementById("congratulations");
     const quizText = document.getElementById("quizQuestion");
     const answerOptions = document.getElementById("answerOptions");
+
     const minutesEl = document.getElementById("minutes");
     const secondsEl = document.getElementById("seconds");
 
-    function handleQuizP() {
-      if (quizQuestion === "Are you over the age of 64?") {
-        quizQuestion = "2. Do you live in the United States?";
-        quizText.textContent = quizQuestion;
-        setYesNoOptions();
-        smoothScrollToTop(1000, 532);
-      } else {
-        stepProcess("yes");
-      }
+    // Store all selections if needed later
+    const selections = { age:null, us_citizen:null, ab:null };
+
+    // Steps: 1) Age (4 options), 2) US residency, 3) Medicare A/B enrollment
+    const steps = [
+      {
+        key: 'age',
+        question: "1. What's Your Age Range?",
+        options: [
+          {label:"UNDER 64", value:"Under 64"},
+          {label:"64-69", value:"64-69"},
+          {label:"70-74", value:"70-74"},
+          {label:"75+", value:"75+"},
+        ],
+        onSelect: (val)=> rbAge(val)
+      },
+      {
+        key: 'us_citizen',
+        question: "2. Do you live in the United States?",
+        options: [
+          {label:"YES", value:"yes"},
+          {label:"NO", value:"no"},
+        ],
+        onSelect: (val)=> rbTag('us_citizen', val)
+      },
+      {
+        key: 'ab',
+        question: "3. Are You Currently Enrolled in Medicare Part A or Part B?",
+        options: [
+          {label:"YES", value:"yes"},
+          {label:"NO", value:"no"},
+        ],
+        onSelect: (val)=> rbTag('ab', val)
+      },
+    ];
+
+    let stepIndex = 0;
+
+    function renderStep(){
+      const s = steps[stepIndex];
+      quizText.textContent = s.question;
+
+      // Inject buttons matching your CSS classes
+      answerOptions.innerHTML = s.options.map((o,i)=>(
+        `<div class="answer-btn-5" data-i="${i}">${o.label}</div>`
+      )).join('');
+
+      // Bind clicks
+      [...answerOptions.children].forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const choice = s.options[+btn.dataset.i];
+          handleChoice(s, choice.value);
+        });
+      });
+
+      smoothScrollToTop(600, 0);
     }
 
-    function handleQuizN() {
-      if (quizQuestion === "Are you over the age of 64?") {
-        quizQuestion = "2. Do you live in the United States?";
-        quizText.textContent = quizQuestion;
-        setYesNoOptions();
-        smoothScrollToTop(1000, 532);
-      } else {
-        stepProcess("no");
-      }
-    }
+    function handleChoice(step, value){
+      selections[step.key] = value;
+      if (typeof step.onSelect === 'function') step.onSelect(value);
 
-    function setYesNoOptions() {
-      answerOptions.innerHTML = `
-        <div class="answer-btn-5" onclick="stepProcess('yes')">YES</div>
-        <div class="answer-btn-5" onclick="stepProcess('no')">NO</div>
-      `;
+      const more = stepIndex < steps.length - 1;
+      if (more){
+        stepIndex++;
+        renderStep();
+      } else {
+        // go to verifying sequence
+        stepProcess();
+      }
     }
 
     function smoothScrollToTop(duration, targetPosition = 0) {
@@ -174,8 +242,8 @@
       requestAnimationFrame(animation);
     }
 
-    const stepProcess = (answer) => {
-      smoothScrollToTop(1000);
+    const stepProcess = () => {
+      smoothScrollToTop(600);
       const mainContent = document.getElementById("mainContent");
       mainContent.classList.add("hidden");
       statusDiv.classList.remove("hidden");
@@ -186,18 +254,11 @@
         setTimeout(() => {
           statusMessage.textContent = "Confirming Eligibility...";
           setTimeout(() => {
-            setStep("completed");
+            showCongratulations();
           }, 1500);
         }, 1500);
       }, 1500);
     };
-
-    function setStep(newStep) {
-      step = newStep;
-      if (step === "completed") {
-        showCongratulations();
-      }
-    }
 
     function showCongratulations() {
       statusDiv.classList.add("hidden");
@@ -220,14 +281,11 @@
       }, 1000);
     }
 
-    // ---------- NewsBreak raw_call firing on CALL click ----------
-    // We attach a robust handler that (a) waits for nbpix if needed,
-    // (b) tries to send the event, then (c) dials with a tiny delay to avoid event drops.
+    // NB raw_call firing on CALL click (unchanged behavior)
     (function attachCallHandler() {
       const link = document.getElementById('callLink');
       if (!link) return;
 
-      // Wait for nbpix to be defined (max ~2s), then resolve regardless.
       function waitForNbpix(maxMs = 2000) {
         return new Promise(resolve => {
           if (typeof window.nbpix === 'function') return resolve(true);
@@ -253,35 +311,47 @@
       }
 
       link.addEventListener('click', async function (e) {
-        // Prevent immediate navigation so the pixel has time to send
         e.preventDefault();
         const href = this.getAttribute('href');
-
-        // Try to fire pixel
-        let fired = await fireNbpixRawCall();
-
-        // As an additional safety, try a sendBeacon-keepalive ping (best-effort)
-        try {
-          if (navigator.sendBeacon && typeof window.nbpix === 'object' && window.nbpix && window.nbpix.endpoint) {
-            // If NB exposes an endpoint, you could sendBeacon here.
-            // This is a placeholder pattern; SDK typically handles transport internally.
-            // navigator.sendBeacon(window.nbpix.endpoint, JSON.stringify({event:'raw_call'}));
-          }
-        } catch (_) {}
-
-        // Small delay to avoid drop, then dial
-        setTimeout(() => {
-          window.location.href = href;
-        }, fired ? 120 : 180);
+        const fired = await fireNbpixRawCall();
+        setTimeout(() => { window.location.href = href; }, fired ? 120 : 180);
       });
     })();
 
-    // (Optional direct API if you still want a callable function)
-    function handleCall() {
-      try { nbpix('event','raw_call'); } catch(e) {}
-      // navigation handled by attached listener above
-      console.log("handleCall triggered");
-    }
+    // Kick off first question (age ranges)
+    renderStep();
   </script>
+
+  <!-- Your provided helper kept for reference / compatibility -->
+<script>
+  /* ========= RINGBA / NB HELPERS ========= */
+  window._rgba_tags = window._rgba_tags || [];
+  const RINGBA_AGE_KEY = 'age'; // your Tag Pipe key
+
+  /**
+   * Push lowercase values to Ringba + NewsBreak
+   */
+  function rbTag(key, value) {
+    try {
+      const lowerValue = (value || '').toString().trim().toLowerCase(); // force lowercase
+      window.newsbreak_cid = lowerValue || '';
+
+      const tag = {};
+      tag[key === 'age' ? RINGBA_AGE_KEY : key] = lowerValue;
+      tag['newsbreak_cid'] = window.newsbreak_cid || '';
+      window._rgba_tags.push(tag);
+
+      console.log('[Ringba] pushed (lowercase):', tag, '→ _rgba_tags:', window._rgba_tags);
+    } catch (e) {
+      console.warn('[Ringba] push failed', e);
+    }
+  }
+
+  // Optional helper for Age-only (kept for backward compatibility)
+  function rbAge(value) {
+    rbTag('age', value);
+  }
+</script>
+
 </body>
 </html>
