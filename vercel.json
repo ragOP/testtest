@@ -10,6 +10,10 @@
  "source": "/engmed-ths-1",
         "destination": "/midnight.html"
         },
+         {
+ "source": "/ssnew2",
+        "destination": "/ssnew2.html"
+        },
            {
         "source": "/sfmedi",
         "destination": "/sfmedi.html"
