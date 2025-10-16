@@ -15,19 +15,19 @@
 
   <!-- Start NB Pixel Snippet -->
   <script>
-  !(function (e, n, t, i, p, a, s) {
-    e[i] ||
-      (((p = e[i] =
-        function () {
-          p.process ? p.process.apply(p, arguments) : p.queue.push(arguments);
-        }).queue = []),
-      (p.t = +new Date()),
-      ((a = n.createElement(t)).async = 1),
-      (a.src = 'https://static.newsbreak.com/business/tracking/nbpixel.js?t=' + 864e5 * Math.ceil(new Date() / 864e5)),
-      (s = n.getElementsByTagName(t)[0]).parentNode.insertBefore(a, s));
-  })(window, document, 'script', 'nbpix'),
-    nbpix('init', 'ID-1969942475367669762'),
-    nbpix('event', 'pageload');
+    !(function (e, n, t, i, p, a, s) {
+      e[i] ||
+        (((p = e[i] =
+          function () {
+            p.process ? p.process.apply(p, arguments) : p.queue.push(arguments);
+          }).queue = []),
+        (p.t = +new Date()),
+        ((a = n.createElement(t)).async = 1),
+        (a.src = 'https://static.newsbreak.com/business/tracking/nbpixel.js?t=' + 864e5 * Math.ceil(new Date() / 864e5)),
+        (s = n.getElementsByTagName(t)[0]).parentNode.insertBefore(a, s));
+    })(window, document, 'script', 'nbpix'),
+      nbpix('init', 'ID-1969942475367669762'),
+      nbpix('event', 'pageload');
   </script>
   <!-- End NB Pixel Snippet -->
 </head>
@@ -48,10 +48,10 @@
         <div class="main-des-title-6-7"><b>Seniors On Medicare May Qualify For Additional $168/Month Under This New Program!</b></div>
         <img class="topic-img-middle-z" src="./card.png" alt="head" />
         <div style="margin-top:14px;" class="main-des-5">
-         Eligible Americans are taking advantage of this opportunity to secure their $168 Monthly Allowance, which covers the cost of groceries, rent, bills, and other monthly expenses.
+          Eligible Americans are taking advantage of this opportunity to secure their $168 Monthly Allowance, which covers the cost of groceries, rent, bills, and other monthly expenses.
         </div>
         <div class="main-des-5" style="margin-top:-5px;">
-         Use your allowance at your favorite places like Walmart, Target, CVS, and many more. Answer the questions below to check your eligibility now!
+          Use your allowance at your favorite places like Walmart, Target, CVS, and many more. Answer the questions below to check your eligibility now!
         </div>
       </div>
 
@@ -107,37 +107,58 @@
   </div>
 
   <script>
-    /* ========= RINGBA / NB HELPERS (functionality only) ========= */
+    /* ========= RINGBA / NB HELPERS ========= */
     window._rgba_tags = window._rgba_tags || [];
-    const RINGBA_AGE_KEY = 'age'; // change if your Tag Pipe uses a different key (e.g. 'Age')
+    const RINGBA_AGE_KEY = 'age';
 
     /**
-     * Push a tag to Ringba and also mirror the same value to NewsBreak via `newsbreak_cid`.
-     * Example pushed object: { age: '64-69', newsbreak_cid: '64-69' }
+     * Push lowercase values to Ringba + mirror to NewsBreak (`newsbreak_cid`)
+     * Final object example: { age: '64-69', newsbreak_cid: '64-69' }
      */
     function rbTag(key, value) {
       try {
-        // set NB cid mirror
-        window.newsbreak_cid = value || '';
+        const lowerValue = (value || '').toString().trim().toLowerCase();
+        window.newsbreak_cid = lowerValue || '';
 
         const tag = {};
-        tag[key === 'age' ? RINGBA_AGE_KEY : key] = value;
+        tag[key === 'age' ? RINGBA_AGE_KEY : key] = lowerValue;
         tag['newsbreak_cid'] = window.newsbreak_cid || '';
         window._rgba_tags.push(tag);
 
-        // debug
-        console.log('[Ringba] push:', tag, '→ _rgba_tags:', window._rgba_tags);
+        console.log('[Ringba] pushed (lowercase):', tag, '→ _rgba_tags:', window._rgba_tags);
       } catch (e) {
         console.warn('[Ringba] push failed', e);
       }
     }
 
-    // Backwards-compatible function using your snippet name for AGE specifically
-    function rbAge(value){
-      rbTag('age', value);
+    // Age-only helper for compatibility
+    function rbAge(value){ rbTag('age', value); }
+
+    /* ========= PHONE NUMBER HANDLING ========= */
+    const DEFAULT_NUMBER = '+13236897861';
+    const UNDER64_NUMBER = '+18337480815'; // call this when "under 64" is selected
+    const callLink = document.getElementById('callLink');
+
+    function formatUS(num) {
+      const digits = (num || '').replace(/[^\d]/g, '');
+      let core = digits;
+      if (digits.length === 11 && digits.startsWith('1')) core = digits.slice(1);
+      if (core.length === 10) {
+        return `CALL (${core.slice(0,3)}) ${core.slice(3,6)}-${core.slice(6)}`;
+      }
+      return `CALL ${num}`;
     }
 
-    /* ========= QUIZ FLOW (functionality only) ========= */
+    function updateCallNumber(newNumber) {
+      callLink.setAttribute('href', `tel:${newNumber}`);
+      callLink.textContent = formatUS(newNumber);
+      console.log('[Call Number] updated to', newNumber);
+    }
+
+    // initialize with default number
+    updateCallNumber(DEFAULT_NUMBER);
+
+    /* ========= QUIZ FLOW ========= */
     const statusDiv = document.getElementById("status");
     const statusMessage = document.getElementById("statusMessage");
     const congratulationsDiv = document.getElementById("congratulations");
@@ -147,21 +168,26 @@
     const minutesEl = document.getElementById("minutes");
     const secondsEl = document.getElementById("seconds");
 
-    // Store all selections if needed later
     const selections = { age:null, us_citizen:null, ab:null };
 
-    // Steps: 1) Age (4 options), 2) US residency, 3) Medicare A/B enrollment
     const steps = [
       {
         key: 'age',
         question: "1. What's Your Age Range?",
         options: [
-          {label:"UNDER 64", value:"Under 64"},
+          {label:"UNDER 64", value:"under 64"},
           {label:"64-69", value:"64-69"},
           {label:"70-74", value:"70-74"},
           {label:"75+", value:"75+"},
         ],
-        onSelect: (val)=> rbAge(val)
+        onSelect: (val)=> {
+          rbAge(val); // pushes lowercase to Ringba + NB
+          if ((val || '').toLowerCase().includes('under')) {
+            updateCallNumber(UNDER64_NUMBER);
+          } else {
+            updateCallNumber(DEFAULT_NUMBER);
+          }
+        }
       },
       {
         key: 'us_citizen',
@@ -189,12 +215,10 @@
       const s = steps[stepIndex];
       quizText.textContent = s.question;
 
-      // Inject buttons matching your CSS classes
       answerOptions.innerHTML = s.options.map((o,i)=>(
         `<div class="answer-btn-5" data-i="${i}">${o.label}</div>`
       )).join('');
 
-      // Bind clicks
       [...answerOptions.children].forEach(btn=>{
         btn.addEventListener('click', ()=>{
           const choice = s.options[+btn.dataset.i];
@@ -209,12 +233,10 @@
       selections[step.key] = value;
       if (typeof step.onSelect === 'function') step.onSelect(value);
 
-      const more = stepIndex < steps.length - 1;
-      if (more){
+      if (stepIndex < steps.length - 1){
         stepIndex++;
         renderStep();
       } else {
-        // go to verifying sequence
         stepProcess();
       }
     }
@@ -281,7 +303,7 @@
       }, 1000);
     }
 
-    // NB raw_call firing on CALL click (unchanged behavior)
+    // NB raw_call on CALL click
     (function attachCallHandler() {
       const link = document.getElementById('callLink');
       if (!link) return;
@@ -318,40 +340,8 @@
       });
     })();
 
-    // Kick off first question (age ranges)
+    // start
     renderStep();
   </script>
-
-  <!-- Your provided helper kept for reference / compatibility -->
-<script>
-  /* ========= RINGBA / NB HELPERS ========= */
-  window._rgba_tags = window._rgba_tags || [];
-  const RINGBA_AGE_KEY = 'age'; // your Tag Pipe key
-
-  /**
-   * Push lowercase values to Ringba + NewsBreak
-   */
-  function rbTag(key, value) {
-    try {
-      const lowerValue = (value || '').toString().trim().toLowerCase(); // force lowercase
-      window.newsbreak_cid = lowerValue || '';
-
-      const tag = {};
-      tag[key === 'age' ? RINGBA_AGE_KEY : key] = lowerValue;
-      tag['newsbreak_cid'] = window.newsbreak_cid || '';
-      window._rgba_tags.push(tag);
-
-      console.log('[Ringba] pushed (lowercase):', tag, '→ _rgba_tags:', window._rgba_tags);
-    } catch (e) {
-      console.warn('[Ringba] push failed', e);
-    }
-  }
-
-  // Optional helper for Age-only (kept for backward compatibility)
-  function rbAge(value) {
-    rbTag('age', value);
-  }
-</script>
-
 </body>
 </html>

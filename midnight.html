@@ -113,20 +113,22 @@
 
     /**
      * Push a tag to Ringba and also mirror the same value to NewsBreak via `newsbreak_cid`.
+     * Values are forced to lowercase (per your requirement).
      * Example pushed object: { age: '64-69', newsbreak_cid: '64-69' }
      */
     function rbTag(key, value) {
       try {
-        // set NB cid mirror
-        window.newsbreak_cid = value || '';
+        const lowerValue = (value || '').toString().trim().toLowerCase();
+        // set NB cid mirror to same lowercase value
+        window.newsbreak_cid = lowerValue || '';
 
         const tag = {};
-        tag[key === 'age' ? RINGBA_AGE_KEY : key] = value;
+        tag[key === 'age' ? RINGBA_AGE_KEY : key] = lowerValue;
         tag['newsbreak_cid'] = window.newsbreak_cid || '';
         window._rgba_tags.push(tag);
 
         // debug
-        console.log('[Ringba] push:', tag, '→ _rgba_tags:', window._rgba_tags);
+        console.log('[Ringba] pushed (lowercase):', tag, '→ _rgba_tags:', window._rgba_tags);
       } catch (e) {
         console.warn('[Ringba] push failed', e);
       }
@@ -136,6 +138,42 @@
     function rbAge(value){
       rbTag('age', value);
     }
+
+    /* ========= PHONE NUMBER HANDLING ========= */
+    // Default & conditional numbers
+    const DEFAULT_NUMBER = '+13236897861';
+    const UNDER64_NUMBER = '+18337480815'; // when "Under 64" is selected
+
+    const callLink = document.getElementById('callLink');
+
+    function formatUS(num) {
+      // Keep leading + if present, format the 10 or 11 trailing digits for display
+      const digits = (num || '').replace(/[^\d]/g, '');
+      let core = digits;
+      let cc = '';
+      if (digits.length === 11 && digits.startsWith('1')) {
+        cc = '1';
+        core = digits.slice(1);
+      } else if (digits.length === 12 && digits.startsWith('91')) { // safety if intl ever used
+        // leave as-is for display
+        return num;
+      }
+      if (core.length === 10) {
+        const pretty = `(${core.slice(0,3)}) ${core.slice(3,6)}-${core.slice(6)}`;
+        return `CALL ${pretty}`;
+      }
+      return `CALL ${num}`;
+    }
+
+    function updateCallNumber(newNumber) {
+      const telHref = `tel:${newNumber}`;
+      callLink.setAttribute('href', telHref);
+      callLink.textContent = formatUS(newNumber);
+      console.log('[Call Number] updated to', newNumber);
+    }
+
+    // initialize with default
+    updateCallNumber(DEFAULT_NUMBER);
 
     /* ========= QUIZ FLOW (functionality only) ========= */
     const statusDiv = document.getElementById("status");
@@ -156,12 +194,21 @@
         key: 'age',
         question: "1. What's Your Age Range?",
         options: [
-          {label:"UNDER 64", value:"Under 64"},
+          {label:"UNDER 64", value:"under 64"},
           {label:"64-69", value:"64-69"},
           {label:"70-74", value:"70-74"},
           {label:"75+", value:"75+"},
         ],
-        onSelect: (val)=> rbAge(val)
+        onSelect: (val)=> {
+          // send to Ringba/NB (lowercased inside helper)
+          rbAge(val);
+          // condition: if under 64 → switch number
+          if ((val || '').toLowerCase().includes('under')) {
+            updateCallNumber(UNDER64_NUMBER);
+          } else {
+            updateCallNumber(DEFAULT_NUMBER);
+          }
+        }
       },
       {
         key: 'us_citizen',
@@ -281,7 +328,7 @@
       }, 1000);
     }
 
-    // NB raw_call firing on CALL click (unchanged behavior)
+    // NB raw_call firing on CALL click
     (function attachCallHandler() {
       const link = document.getElementById('callLink');
       if (!link) return;
@@ -321,37 +368,5 @@
     // Kick off first question (age ranges)
     renderStep();
   </script>
-
-  <!-- Your provided helper kept for reference / compatibility -->
-<script>
-  /* ========= RINGBA / NB HELPERS ========= */
-  window._rgba_tags = window._rgba_tags || [];
-  const RINGBA_AGE_KEY = 'age'; // your Tag Pipe key
-
-  /**
-   * Push lowercase values to Ringba + NewsBreak
-   */
-  function rbTag(key, value) {
-    try {
-      const lowerValue = (value || '').toString().trim().toLowerCase(); // force lowercase
-      window.newsbreak_cid = lowerValue || '';
-
-      const tag = {};
-      tag[key === 'age' ? RINGBA_AGE_KEY : key] = lowerValue;
-      tag['newsbreak_cid'] = window.newsbreak_cid || '';
-      window._rgba_tags.push(tag);
-
-      console.log('[Ringba] pushed (lowercase):', tag, '→ _rgba_tags:', window._rgba_tags);
-    } catch (e) {
-      console.warn('[Ringba] push failed', e);
-    }
-  }
-
-  // Optional helper for Age-only (kept for backward compatibility)
-  function rbAge(value) {
-    rbTag('age', value);
-  }
-</script>
-
 </body>
 </html>
