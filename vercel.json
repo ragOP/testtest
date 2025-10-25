@@ -5,6 +5,11 @@
         "destination": "/first.html"
     
       },
+       {
+        "source": "/sslang",
+        "destination": "/sslang.html"
+    
+      },
 
         {
  "source": "/engmed-ths-1",
